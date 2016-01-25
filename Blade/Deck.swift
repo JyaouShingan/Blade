@@ -28,7 +28,7 @@ class Deck {
 			self.cardDeck.append(Mirror())
 		}
 		for _ in 0..<6 {
-			self.cardDeck.append(Blot())
+			self.cardDeck.append(Bolt())
 		}
 		self.shuffle()
 		for card in self.cardDeck {

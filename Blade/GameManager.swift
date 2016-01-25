@@ -25,12 +25,8 @@ enum GameMode {
 	case Normal
 	case NoRestriction
 }
-//
-//protocol PlayerDataSource: class {
-//	func getHandcard(card: Card)
-//	func requestAction(callback: ActionCallback)
-//	func updateGameStatus(status: GameStatus)
-//}
+
+let ManagerQueue = dispatch_queue_create("game_manager_queue", DISPATCH_QUEUE_SERIAL)
 
 class DeskStack {
 	var cardStack: [Card] = []
@@ -38,25 +34,26 @@ class DeskStack {
 	
 	func addWeaponCard(card: Card) {
 		self.cardStack.append(card)
-		self.point += card.weaponNum!
+		if let wCard = card as? WeaponCard {
+			self.point += wCard.weaponNum
+		}
 	}
 	
 	func removeTopCard() {
-		if let card = self.cardStack.popLast() {
-			self.point -= card.weaponNum!
+		if let card = self.cardStack.popLast(), let wCard = card as? WeaponCard {
+			self.point -= wCard.weaponNum
 		}
 	}
 }
 
 class GameManager {
-	private let managerQueue = dispatch_queue_create("game_manager_queue", DISPATCH_QUEUE_SERIAL)
 	
 	private var mode: GameMode
 	
 	private var deck: Deck!
 	private var state: GameState {
 		didSet {
-			dispatch_async(managerQueue) {
+			dispatch_async(ManagerQueue) {
 				self.processState()
 			}
 		}
@@ -120,28 +117,32 @@ class GameManager {
 	}
 	
 	private func pointDual() {
-		let hostCard = self.getFirstWeaponCard()
-		let opponentCard = self.getFirstWeaponCard()
-		
-		self.hostCardStack.addWeaponCard(hostCard)
-		self.oppoCardStack.addWeaponCard(opponentCard)
-		
-		print("--PointDual--")
-		print("Host: \(hostCard)")
-		print("Opponent: \(opponentCard)")
-		self.state = hostCard.weaponNum! < opponentCard.weaponNum! ? .HostTurn : .OpponentTurn
+		do {
+			let hostCard = try self.getFirstWeaponCard()
+			let opponentCard = try self.getFirstWeaponCard()
+
+			self.hostCardStack.addWeaponCard(hostCard)
+			self.oppoCardStack.addWeaponCard(opponentCard)
+
+			print("--PointDual--")
+			print("Host: \(hostCard)")
+			print("Opponent: \(opponentCard)")
+			self.state = hostCard.weaponNum < opponentCard.weaponNum ? .HostTurn : .OpponentTurn
+		} catch _ {
+			self.state = .Error
+		}
 	}
 	
 	private func startHostStep() {
-		self.host?.requestAction({ (action) -> () in
+		self.host?.requestAction() { (action: Action) -> Void in
 			self.registerAction(action)
-		})
+		}
 	}
 	
 	private func startOppoStep() {
-		self.opponent?.requestAction({ (action) -> () in
+		self.opponent?.requestAction() { (action: Action) -> Void in
 			self.registerAction(action)
-		})
+		}
 	}
 	
 	private func processPlayHand(action: Action) {
@@ -150,8 +151,12 @@ class GameManager {
 			switch card.cardType {
 			case .Weapon:
 				actionStack.addWeaponCard(card)
-			case .Blot:
-				oppoStack.removeTopCard()
+			case .Bolt:
+				if oppoStack.cardStack.isEmpty {
+					
+				} else {
+					oppoStack.removeTopCard()
+				}
 			case .Mirror:
 				let tempStack = actionStack.cardStack
 				let tempPoint = actionStack.point
@@ -179,7 +184,7 @@ class GameManager {
 		}
 	}
 	
-	private func registerAction(action: Action) {
+	func registerAction(action: Action) {
 		switch action.actionType {
 		case .PlayHand:
 			self.processPlayHand(action)
@@ -188,15 +193,26 @@ class GameManager {
 		case .Quit:
 			()
 		}
+		
+		switch action.playerType {
+		case .Host:
+			self.host?.actionFeedback(action.id, type: .Accepted)
+		case .Opponent:
+			self.opponent?.actionFeedback(action.id, type: .Accepted)
+		}
 	}
 	
 	// MARK:- Helper
 	
-	private func getFirstWeaponCard() -> Card {
-		var card = self.deck.cardDeck.popLast()!
-		while card.cardType != .Weapon {
-			card = self.deck.cardDeck.popLast()!
+	private func getFirstWeaponCard() throws -> WeaponCard {
+		var index = self.deck.cardDeck.count - 1
+		while index >= 0 {
+			if let weapon = self.deck.cardDeck[index] as? WeaponCard {
+				return weapon
+			} else {
+				index--
+			}
 		}
-		return card
+		throw NSError(domain: "com.blade", code: 11, userInfo: [NSLocalizedDescriptionKey:"Weapon Card Not Found in current Deck"])
 	}
 }

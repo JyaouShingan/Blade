@@ -10,11 +10,15 @@ import Foundation
 
 class TestPlayer: Player {
 	override func requestAction(callback: ActionCallback) {
-		if let card = self.handCards.popLast() {
-			let action = Action(playerType: self.type, actionType: .PlayHand, playedHand: card)
+		if self.handCards.count != 0 {
+			let index = Int(arc4random()) % self.handCards.count
+			let card = self.handCards.removeAtIndex(index)
+			let action = ActionManager.createAction(self.type, actionType: .PlayHand, playedHand: card)
+			self.pendingActions[action.id] = action
 			callback(action)
 		} else {
-			let action = Action(playerType: self.type, actionType: .OutOfCard, playedHand: nil)
+			let action = ActionManager.createAction(self.type, actionType: .OutOfCard, playedHand: nil)
+			self.pendingActions[action.id] = action
 			callback(action)
 		}
 	}

@@ -19,6 +19,8 @@ class Player {
 	var handCards: [Card] = []
 	var gameStatus: GameStatus?
 	
+	internal var pendingActions: [ActionID:Action] = [:]
+	
 	weak var manager: GameManager?
 	
 	// MARK:- PlayerDataSource
@@ -31,7 +33,6 @@ class Player {
 		self.handCards.append(card)
 		if self.handCards.count == 9 {
 			self.handCards.sortInPlace{ $0 < $1 }
-			print("")
 		}
 	}
 	
@@ -41,5 +42,23 @@ class Player {
 	
 	func updateGameStatus(status: GameStatus) {
 		
+	}
+	
+	func sendingAction(action: Action) {
+		dispatch_async(ManagerQueue) {
+			self.manager?.registerAction(action)
+		}
+	}
+	
+	func actionFeedback(id: ActionID, type: ActionFeedback, message: String? = nil) {
+		if let _ = self.pendingActions[id] {
+			self.pendingActions.removeValueForKey(id)
+			switch type {
+			case .Accepted:
+				print("Action accepted")
+			case .Rejected:
+				print("Error message: \(message)")
+			}
+		}
 	}
 }

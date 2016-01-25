@@ -10,76 +10,79 @@ import Foundation
 
 enum CardType {
 	case Weapon
-	case Blot
+	case Bolt
 	case Mirror
 	case NotCard
 }
 
 protocol Card: CustomStringConvertible {
 	var cardType: CardType { get }
-	var weaponNum: Int? { get }
 	var sortIndex: Int { get }
 	var name: String { get }
 }
 
-class Eliot: Card {
+protocol WeaponCard: Card {
+	var weaponNum: Int { get }
+}
+
+class Eliot: WeaponCard {
 	var cardType: CardType = .Weapon
-	var weaponNum: Int? = 1
+	var weaponNum: Int = 1
 	var sortIndex: Int = 0
 	var name: String = "Eliot"
-	var description: String { get { return "\(self.weaponNum!) - \(self.name)" } }
+	var description: String { get { return "\(self.weaponNum) - \(self.name)" } }
 }
 
-class Fei: Card {
+class Fei: WeaponCard {
 	var cardType: CardType = .Weapon
-	var weaponNum: Int? = 2
+	var weaponNum: Int = 2
 	var sortIndex: Int = 1
 	var name: String = "Fei"
-	var description: String { get { return "\(self.weaponNum!) - \(self.name)" } }
+	var description: String { get { return "\(self.weaponNum) - \(self.name)" } }
 }
 
-class Alisa: Card {
+class Alisa: WeaponCard {
 	var cardType: CardType = .Weapon
-	var weaponNum: Int? = 3
+	var weaponNum: Int = 3
 	var sortIndex: Int = 2
 	var name: String = "Alisa"
-	var description: String { get { return "\(self.weaponNum!) - \(self.name)" } }
+	var description: String { get { return "\(self.weaponNum) - \(self.name)" } }
 }
 
-class Jusis: Card {
+class Jusis: WeaponCard {
 	var cardType: CardType = .Weapon
-	var weaponNum: Int? = 4
+	var weaponNum: Int = 4
 	var sortIndex: Int = 3
 	var name: String = "Jusis"
-	var description: String { get { return "\(self.weaponNum!) - \(self.name)" } }
+	var description: String { get { return "\(self.weaponNum) - \(self.name)" } }
 }
 
-class Machias: Card {
+class Machias: WeaponCard {
 	var cardType: CardType = .Weapon
-	var weaponNum: Int? = 5
+	var weaponNum: Int = 5
 	var sortIndex: Int = 4
 	var name: String = "Machias"
-	var description: String { get { return "\(self.weaponNum!) - \(self.name)" } }
+	var description: String { get { return "\(self.weaponNum) - \(self.name)" } }
 }
 
-class Gaius: Card {
+class Gaius: WeaponCard {
 	var cardType: CardType = .Weapon
-	var weaponNum: Int? = 6
+	var weaponNum: Int = 6
 	var sortIndex: Int = 5
 	var name: String = "Gaius"
-	var description: String { get { return "\(self.weaponNum!) - \(self.name)" } }
+	var description: String { get { return "\(self.weaponNum) - \(self.name)" } }
 }
 
-class Laura: Card {
+class Laura: WeaponCard {
 	var cardType: CardType = .Weapon
-	var weaponNum: Int? = 7
+	var weaponNum: Int = 7
 	var sortIndex: Int = 6
 	var name: String = "Laura"
-	var description: String { get { return "\(self.weaponNum!) - \(self.name)" } }
+	var description: String { get { return "\(self.weaponNum) - \(self.name)" } }
 }
 
-class Blot: Card {
-	var cardType: CardType = .Blot
+class Bolt: Card {
+	var cardType: CardType = .Bolt
 	var weaponNum: Int? = nil
 	var sortIndex: Int = 7
 	var name: String = "Blot"
