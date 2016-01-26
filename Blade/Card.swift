@@ -85,7 +85,7 @@ class Bolt: Card {
 	var cardType: CardType = .Bolt
 	var weaponNum: Int? = nil
 	var sortIndex: Int = 7
-	var name: String = "Blot"
+	var name: String = "Bolt"
 	var description: String { get { return "B - \(self.name)" } }
 }
 

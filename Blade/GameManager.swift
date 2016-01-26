@@ -208,6 +208,7 @@ class GameManager {
 		var index = self.deck.cardDeck.count - 1
 		while index >= 0 {
 			if let weapon = self.deck.cardDeck[index] as? WeaponCard {
+				self.deck.cardDeck.removeAtIndex(index)
 				return weapon
 			} else {
 				index--
