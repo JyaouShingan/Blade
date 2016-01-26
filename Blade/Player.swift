@@ -66,7 +66,7 @@ class Player {
 				}
 				print("Action accepted")
 			case .Rejected(let msg):
-				print("Error message: \(msg)")
+				print("Action rejected: \(msg)")
 			}
 		}
 	}

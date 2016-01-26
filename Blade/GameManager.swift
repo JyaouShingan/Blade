@@ -169,10 +169,20 @@ class GameManager {
 			print("Played card: \(card)")
 			switch card.cardType {
 			case .Weapon:
+				switch action.playerType {
+				case .Host:
+					if self.oppoCardStack.point - self.hostCardStack.point >= (action.playedHand as! WeaponCard).weaponNum {
+						return .Rejected(reason: "Must play a card larger than difference")
+					}
+				case .Opponent:
+					if self.hostCardStack.point - self.oppoCardStack.point >= (action.playedHand as! WeaponCard).weaponNum {
+						return .Rejected(reason: "Must play a card larger than difference")
+					}
+				}
 				actionStack.addWeaponCard(card)
 			case .Bolt:
 				if oppoStack.cardStack.isEmpty {
-					
+					return .Rejected(reason: "Other's desk is empty")
 				} else {
 					oppoStack.removeTopCard()
 				}
@@ -186,8 +196,6 @@ class GameManager {
 			default:
 				()
 			}
-			print("Host Point: \(self.hostCardStack.point) Stack: \(self.hostCardStack.cardStack)")
-			print("Oppo Point: \(self.oppoCardStack.point) Stack: \(self.oppoCardStack.cardStack)")
 			return .Accepted
 		}
 
@@ -213,7 +221,7 @@ class GameManager {
 			else { retry() }
 			return fb
 		} else {
-			return ActionFeedback.Rejected(reason: "Action received during others turn")
+			return ActionFeedback.Rejected(reason: "Cannot play hand during others turn")
 		}
 	}
 	
