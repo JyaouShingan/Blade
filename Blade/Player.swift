@@ -18,7 +18,9 @@ class Player {
 	var type: PlayerType
 	var handCards: [Card] = []
 	var gameStatus: GameStatus?
-	
+
+	var actionManager = ActionManager()
+	var actionCallback: ActionCallback?
 	internal var pendingActions: [ActionID:Action] = [:]
 	
 	weak var manager: GameManager?
@@ -35,13 +37,17 @@ class Player {
 			self.handCards.sortInPlace{ $0 < $1 }
 		}
 	}
-	
-	func requestAction(callback: ActionCallback) {
+
+	func playHand(index index: Int) {
 		
 	}
 	
+	func requestAction(callback: ActionCallback) {
+		//Override func
+	}
+	
 	func updateGameStatus(status: GameStatus) {
-		
+		//Override func
 	}
 	
 	func sendingAction(action: Action) {
@@ -50,14 +56,17 @@ class Player {
 		}
 	}
 	
-	func actionFeedback(id: ActionID, type: ActionFeedback, message: String? = nil) {
-		if let _ = self.pendingActions[id] {
+	func actionFeedback(id: ActionID, type: ActionFeedback) {
+		if let action = self.pendingActions[id] {
 			self.pendingActions.removeValueForKey(id)
 			switch type {
 			case .Accepted:
+				if let index = action.playedIndex {
+					self.handCards.removeAtIndex(index)
+				}
 				print("Action accepted")
-			case .Rejected:
-				print("Error message: \(message)")
+			case .Rejected(let msg):
+				print("Error message: \(msg)")
 			}
 		}
 	}

@@ -9,17 +9,12 @@
 import Foundation
 
 class TestPlayer: Player {
-	override func requestAction(callback: ActionCallback) {
-		if self.handCards.count != 0 {
-			let index = Int(arc4random()) % self.handCards.count
-			let card = self.handCards.removeAtIndex(index)
-			let action = ActionManager.createAction(self.type, actionType: .PlayHand, playedHand: card)
-			self.pendingActions[action.id] = action
-			callback(action)
-		} else {
-			let action = ActionManager.createAction(self.type, actionType: .OutOfCard, playedHand: nil)
-			self.pendingActions[action.id] = action
-			callback(action)
+	override func playHand(index index: Int) {
+		let card = self.handCards[index]
+		let action = self.actionManager.createAction(self.type, actionType: .PlayHand, playedIndex: index, playedHand: card)
+		self.pendingActions[action.id] = action
+		if let cb = self.actionCallback {
+			cb(action)
 		}
 	}
 }

@@ -27,6 +27,7 @@ enum GameMode {
 }
 
 let ManagerQueue = dispatch_queue_create("game_manager_queue", DISPATCH_QUEUE_SERIAL)
+let BladeNewStateNotfication = "BladeNewStateNotfication"
 
 class DeskStack {
 	var cardStack: [Card] = []
@@ -43,6 +44,11 @@ class DeskStack {
 		if let card = self.cardStack.popLast(), let wCard = card as? WeaponCard {
 			self.point -= wCard.weaponNum
 		}
+	}
+
+	func clear() {
+		self.cardStack.removeAll()
+		self.point = 0
 	}
 }
 
@@ -65,13 +71,19 @@ class GameManager {
 	private var hostCardStack = DeskStack()
 	private var oppoCardStack = DeskStack()
 	
-	
 	init(gameMode: GameMode, host: Player, opponent: Player) {
 		self.mode = gameMode
 		self.state = .Hanging
 		
 		self.host = host
 		self.opponent = opponent
+
+		self.host?.actionCallback = {[weak self] (action: Action) -> Void in
+			self?.registerAction(action)
+		}
+		self.opponent?.actionCallback = {[weak self] (action: Action) -> Void in
+			self?.registerAction(action)
+		}
 	}
 	
 	func start() {
@@ -79,13 +91,20 @@ class GameManager {
 	}
 	
 	func terminate() {
-		
+		self.hostCardStack.clear()
+		self.oppoCardStack.clear()
 	}
 	
 	// MARK:- Game Process
 	
 	private func processState() {
 		print("Enter new state: \(self.state)")
+		let gameStatus = GameStatus(hostDesk: self.hostCardStack, oppoDesk: self.oppoCardStack, state: self.state)
+		self.host?.gameStatus = gameStatus
+		self.opponent?.gameStatus = gameStatus
+
+		NSNotificationCenter.defaultCenter().postNotificationName(BladeNewStateNotfication, object: self, userInfo: nil)
+
 		switch self.state {
 		case .Start:
 			self.dealing()
@@ -145,8 +164,8 @@ class GameManager {
 		}
 	}
 	
-	private func processPlayHand(action: Action) {
-		let processCard = { (card: Card, actionStack: DeskStack, oppoStack: DeskStack) -> Void in
+	private func processPlayHand(action: Action) -> ActionFeedback {
+		let processCard = { (card: Card, actionStack: DeskStack, oppoStack: DeskStack) -> ActionFeedback in
 			print("Played card: \(card)")
 			switch card.cardType {
 			case .Weapon:
@@ -169,36 +188,53 @@ class GameManager {
 			}
 			print("Host Point: \(self.hostCardStack.point) Stack: \(self.hostCardStack.cardStack)")
 			print("Oppo Point: \(self.oppoCardStack.point) Stack: \(self.oppoCardStack.cardStack)")
+			return .Accepted
+		}
+
+		let retry = { [weak self] in
+			switch action.playerType {
+			case .Host:
+				self?.startHostStep()
+			case .Opponent:
+				self?.startOppoStep()
+			}
 		}
 		
 		if action.playerType == .Host && self.state == .HostTurn {
 			print("Host played card")
-			processCard(action.playedHand!, self.hostCardStack, self.oppoCardStack)
-			self.state = .OpponentTurn
+			let fb = processCard(action.playedHand!, self.hostCardStack, self.oppoCardStack)
+			if fb == ActionFeedback.Accepted { self.state = .OpponentTurn }
+			else { retry() }
+			return fb
 		} else if action.playerType == .Opponent && self.state == .OpponentTurn {
 			print("Opponent played card")
-			processCard(action.playedHand!, self.oppoCardStack, self.hostCardStack)
-			self.state = .HostTurn
+			let fb = processCard(action.playedHand!, self.oppoCardStack, self.hostCardStack)
+			if fb == ActionFeedback.Accepted { self.state = .HostTurn }
+			else { retry() }
+			return fb
 		} else {
-			print("ERROR: Action received during others turn")
+			return ActionFeedback.Rejected(reason: "Action received during others turn")
 		}
 	}
 	
 	func registerAction(action: Action) {
+		var feedback: ActionFeedback
 		switch action.actionType {
 		case .PlayHand:
-			self.processPlayHand(action)
+			feedback = self.processPlayHand(action)
 		case .OutOfCard:
 			self.state = .End
+			feedback = .Accepted
 		case .Quit:
+			feedback = .Accepted
 			()
 		}
 		
 		switch action.playerType {
 		case .Host:
-			self.host?.actionFeedback(action.id, type: .Accepted)
+			self.host?.actionFeedback(action.id, type: feedback)
 		case .Opponent:
-			self.opponent?.actionFeedback(action.id, type: .Accepted)
+			self.opponent?.actionFeedback(action.id, type: feedback)
 		}
 	}
 	
@@ -208,6 +244,7 @@ class GameManager {
 		var index = self.deck.cardDeck.count - 1
 		while index >= 0 {
 			if let weapon = self.deck.cardDeck[index] as? WeaponCard {
+				self.deck.cardDeck.removeAtIndex(index)
 				return weapon
 			} else {
 				index--

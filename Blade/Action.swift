@@ -16,15 +16,27 @@ enum ActionType: UInt {
 	case Quit
 }
 
-enum ActionFeedback: UInt {
-	case Accepted = 0
-	case Rejected
+enum ActionFeedback {
+	case Accepted
+	case Rejected(reason: String)
+}
+
+func ==(lhs:ActionFeedback, rhs:ActionFeedback) -> Bool {
+	switch(lhs, rhs) {
+	case (.Accepted, .Accepted):
+		return true
+	case (.Rejected( _), .Rejected( _)):
+		return true
+	default:
+		return false
+	}
 }
 
 struct Action {
 	var id: Int
 	var playerType: PlayerType
 	var actionType: ActionType
+	var playedIndex: Int?
 	var playedHand: Card?
 }
 
@@ -32,13 +44,13 @@ class ActionManager {
 	struct IDPool {
 		var nextID: Int = 0
 	}
-	static private var idPool: IDPool = IDPool()
+	private var idPool: IDPool = IDPool()
 
-	static func getNextID() -> Int {
+	func getNextID() -> Int {
 		return self.idPool.nextID++
 	}
 
-	static func createAction(playerType: PlayerType, actionType: ActionType, playedHand: Card?) -> Action {
-		return Action(id: self.getNextID(), playerType: playerType, actionType: actionType, playedHand: playedHand)
+	func createAction(playerType: PlayerType, actionType: ActionType, playedIndex: Int?, playedHand: Card?) -> Action {
+		return Action(id: self.getNextID(), playerType: playerType, actionType: actionType, playedIndex: playedIndex, playedHand: playedHand)
 	}
 }

@@ -8,6 +8,8 @@
 
 import Foundation
 
-class GameStatus {
-	
+struct GameStatus {
+	let hostDesk: DeskStack
+	let oppoDesk: DeskStack
+	let state: GameState
 }

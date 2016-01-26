@@ -17,14 +17,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 	func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
 		// Override point for customization after application launch.
 		
-		let playerA = TestPlayer(name: "TEST A", type: .Host)
-		let playerB = TestPlayer(name: "TEST B", type: .Opponent)
-		let manager = GameManager(gameMode: .NoRestriction, host: playerA, opponent: playerB)
-		playerA.manager = manager
-		playerB.manager = manager
-		
-		manager.start()
-		
 		return true
 	}
 
