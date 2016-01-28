@@ -125,7 +125,7 @@ class GameManager {
 	private func dealing() {
 		self.deck = Deck()
         
-        for j in 0..<4 {
+        for j in 0..<2 {
             if let card = self.deck.nextMagic() {
                 if j % 2 == 0 {
                     self.host?.getHandcard(card)
@@ -140,7 +140,7 @@ class GameManager {
         self.deck.shuffle()
         print(self.deck.cardDeck)
         
-		for i in 0..<14 {
+		for i in 0..<16 {
 			if let card = self.deck.next() {
 				if i % 2 == 0 {
 					self.host?.getHandcard(card)
@@ -169,9 +169,11 @@ class GameManager {
                 print("Opponent: \(opponentCard)")
                 self.dualcount!++
                 
-                if(self.dualcount == 3){
+                print("Dual Total Times: \(self.dualcount!)")
+                
+                if(self.dualcount == 4){
                     print("re-forge occurs")
-                    // TO COMPLETE AFTER RE_FORGE IMPLEMENTED
+                    //TODO:IMPLEMENT AFTER REFORGE IMPLEMENTATION
                 }
             
             }while(hostCard.weaponNum == opponentCard.weaponNum)
@@ -217,19 +219,40 @@ class GameManager {
 					}
 				}
 				actionStack.addWeaponCard(card)
-			case .Bolt:
-				if oppoStack.cardStack.isEmpty {
-					return .Rejected(reason: "Other's desk is empty")
-				} else {
-					oppoStack.removeTopCard()
-				}
-			case .Mirror:
-				let tempStack = actionStack.cardStack
-				let tempPoint = actionStack.point
-				actionStack.cardStack = oppoStack.cardStack
-				actionStack.point = oppoStack.point
-				oppoStack.cardStack = tempStack
-				oppoStack.point = tempPoint
+            case .Magic:
+                if let card = card as? MagicCard {
+                    switch card.magicType {
+                    case .Bolt:
+                        if oppoStack.cardStack.isEmpty {
+                            return .Rejected(reason: "Other's desk is empty")
+                        } else {
+                            oppoStack.removeTopCard()
+                        }
+                    case .Mirror:
+                        let tempStack = actionStack.cardStack
+                        let tempPoint = actionStack.point
+                        actionStack.cardStack = oppoStack.cardStack
+                        actionStack.point = oppoStack.point
+                        oppoStack.cardStack = tempStack
+                        oppoStack.point = tempPoint
+                    case .Bless:
+                        let point = actionStack.point
+                        let copy = GuardianCopy()
+                        copy.weaponNum = point
+                        switch action.playerType {
+                        case .Host:
+                            if self.oppoCardStack.point > self.hostCardStack.point * 2 {
+                                return .Rejected(reason: "Must play a card larger than difference")
+                            }
+                        case .Opponent:
+                            if self.hostCardStack.point * 2 < self.oppoCardStack.point {
+                                return .Rejected(reason: "Must play a card larger than difference")
+                            }
+                        }
+                        actionStack.addWeaponCard(copy)
+                    }
+                }
+                
 			default:
 				()
 			}

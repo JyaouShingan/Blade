@@ -16,21 +16,22 @@ class Deck {
 		self.cardDeck = []
         self.magicDeck = []
 		for _ in 0..<2 {
-			self.cardDeck.append(Eliot())
+			self.cardDeck.append(Lightbringer())
 			self.cardDeck.append(Apophis())
+            self.magicDeck.append(Guardian())
 		}
 		for _ in 0..<3 {
-			self.cardDeck.append(Fei())
-			self.cardDeck.append(Gaius())
+			self.cardDeck.append(Arondight())
+			self.cardDeck.append(Gungnir())
 		}
 		for _ in 0..<4 {
-			self.cardDeck.append(Alisa())
-			self.cardDeck.append(Jusis())
-			self.cardDeck.append(Machias())
-            self.magicDeck.append(Mirror())
+			self.cardDeck.append(Lævateinn())
+			self.cardDeck.append(Frostmourne())
+			self.cardDeck.append(Kusanagi())
+            self.magicDeck.append(Speculum())
 		}
 		for _ in 0..<6 {
-            self.magicDeck.append(Bolt())
+            self.magicDeck.append(Destruction())
 		}
         
 		self.shuffle()
