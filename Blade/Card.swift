@@ -25,6 +25,10 @@ protocol WeaponCard: Card {
 	var weaponNum: Int { get }
 }
 
+protocol MagicCard: Card {
+    
+}
+
 class Eliot: WeaponCard {
 	var cardType: CardType = .Weapon
 	var weaponNum: Int = 1
@@ -73,15 +77,15 @@ class Gaius: WeaponCard {
 	var description: String { get { return "\(self.weaponNum) - \(self.name)" } }
 }
 
-class Laura: WeaponCard {
+class Apophis: WeaponCard {
 	var cardType: CardType = .Weapon
 	var weaponNum: Int = 7
 	var sortIndex: Int = 6
-	var name: String = "Laura"
+	var name: String = "Apophis"
 	var description: String { get { return "\(self.weaponNum) - \(self.name)" } }
 }
 
-class Bolt: Card {
+class Bolt: MagicCard {
 	var cardType: CardType = .Bolt
 	var weaponNum: Int? = nil
 	var sortIndex: Int = 7
@@ -89,7 +93,7 @@ class Bolt: Card {
 	var description: String { get { return "B - \(self.name)" } }
 }
 
-class Mirror: Card {
+class Mirror: MagicCard {
 	var cardType: CardType = .Mirror
 	var weaponNum: Int? = nil
 	var sortIndex: Int = 8

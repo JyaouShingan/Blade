@@ -37,7 +37,7 @@ class Player {
 			self.handCards.sortInPlace{ $0 < $1 }
 		}
 	}
-
+    
 	func playHand(index index: Int) {
 		
 	}

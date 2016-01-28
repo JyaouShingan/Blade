@@ -55,7 +55,6 @@ class DeskStack {
 class GameManager {
 	
 	private var mode: GameMode
-	
 	private var deck: Deck!
 	private var state: GameState {
 		didSet {
@@ -67,6 +66,7 @@ class GameManager {
 	
 	var host: Player?
 	var opponent: Player?
+    var dualcount: Int?
 	
 	private var hostCardStack = DeskStack()
 	private var oppoCardStack = DeskStack()
@@ -77,6 +77,7 @@ class GameManager {
 		
 		self.host = host
 		self.opponent = opponent
+        self.dualcount = 0
 
 		self.host?.actionCallback = {[weak self] (action: Action) -> Void in
 			self?.registerAction(action)
@@ -123,7 +124,23 @@ class GameManager {
 	
 	private func dealing() {
 		self.deck = Deck()
-		for i in 0..<18 {
+        
+        for j in 0..<4 {
+            if let card = self.deck.nextMagic() {
+                if j % 2 == 0 {
+                    self.host?.getHandcard(card)
+                } else {
+                    self.opponent?.getHandcard(card)
+                }
+            }
+        }
+        
+        print(self.deck.cardDeck)
+        self.deck.cardDeck += self.deck.magicDeck
+        self.deck.shuffle()
+        print(self.deck.cardDeck)
+        
+		for i in 0..<14 {
 			if let card = self.deck.next() {
 				if i % 2 == 0 {
 					self.host?.getHandcard(card)
@@ -137,18 +154,38 @@ class GameManager {
 	
 	private func pointDual() {
 		do {
-			let hostCard = try self.getFirstWeaponCard()
-			let opponentCard = try self.getFirstWeaponCard()
-
+            //let hostCard = try self.getFirstWeaponCard()
+			//let opponentCard = try self.getFirstWeaponCard()
+            
+            var hostCard:WeaponCard
+            var opponentCard:WeaponCard
+            
+            repeat{
+                hostCard = try self.getFirstWeaponCard()
+                opponentCard = try self.getFirstWeaponCard()
+                
+                print("--PointDual--")
+                print("Host: \(hostCard)")
+                print("Opponent: \(opponentCard)")
+                self.dualcount!++
+                
+                if(self.dualcount == 3){
+                    print("re-forge occurs")
+                    // TO COMPLETE AFTER RE_FORGE IMPLEMENTED
+                }
+            
+            }while(hostCard.weaponNum == opponentCard.weaponNum)
+            
+            print("PointDual Finished")
+            
 			self.hostCardStack.addWeaponCard(hostCard)
 			self.oppoCardStack.addWeaponCard(opponentCard)
-
-			print("--PointDual--")
-			print("Host: \(hostCard)")
-			print("Opponent: \(opponentCard)")
+            
 			self.state = hostCard.weaponNum < opponentCard.weaponNum ? .HostTurn : .OpponentTurn
+            
 		} catch _ {
 			self.state = .Error
+            
 		}
 	}
 	

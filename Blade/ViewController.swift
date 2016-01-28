@@ -31,13 +31,14 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
 
 		let playerA = TestPlayer(name: "TEST A", type: .Host)
 		let playerB = TestPlayer(name: "TEST B", type: .Opponent)
-		let manager = GameManager(gameMode: .NoRestriction, host: playerA, opponent: playerB)
+        let manager = GameManager(gameMode: .NoRestriction, host: playerA, opponent: playerB)
 		playerA.manager = manager
 		playerB.manager = manager
 
 		self.playerA = playerA
 		self.playerB = playerB
 		self.gameManager = manager
+        
 
 		manager.start()
     }

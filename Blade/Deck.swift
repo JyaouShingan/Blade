@@ -10,12 +10,14 @@ import Foundation
 
 class Deck {
 	var cardDeck: [Card]
+    var magicDeck: [Card]
 	
 	init() {
 		self.cardDeck = []
+        self.magicDeck = []
 		for _ in 0..<2 {
 			self.cardDeck.append(Eliot())
-			self.cardDeck.append(Laura())
+			self.cardDeck.append(Apophis())
 		}
 		for _ in 0..<3 {
 			self.cardDeck.append(Fei())
@@ -25,15 +27,16 @@ class Deck {
 			self.cardDeck.append(Alisa())
 			self.cardDeck.append(Jusis())
 			self.cardDeck.append(Machias())
-			self.cardDeck.append(Mirror())
+            self.magicDeck.append(Mirror())
 		}
 		for _ in 0..<6 {
-			self.cardDeck.append(Bolt())
+            self.magicDeck.append(Bolt())
 		}
+        
 		self.shuffle()
-		for card in self.cardDeck {
-			print(card)
-		}
+		//for card in self.cardDeck {
+		//	print(card)
+		//}
 	}
 	
 	func shuffle() {
@@ -53,4 +56,9 @@ class Deck {
 	func next() -> Card? {
 		return self.cardDeck.popLast()
 	}
+    
+    func nextMagic() ->Card? {
+        let index = Int(arc4random_uniform(UInt32(self.magicDeck.count-1)))
+        return self.magicDeck.removeAtIndex(index)
+    }
 }
