@@ -171,11 +171,11 @@ class GameManager {
 			case .Weapon:
 				switch action.playerType {
 				case .Host:
-					if self.oppoCardStack.point - self.hostCardStack.point >= (action.playedHand as! WeaponCard).weaponNum {
+					if self.oppoCardStack.point - self.hostCardStack.point > (action.playedHand as! WeaponCard).weaponNum {
 						return .Rejected(reason: "Must play a card larger than difference")
 					}
 				case .Opponent:
-					if self.hostCardStack.point - self.oppoCardStack.point >= (action.playedHand as! WeaponCard).weaponNum {
+					if self.hostCardStack.point - self.oppoCardStack.point > (action.playedHand as! WeaponCard).weaponNum {
 						return .Rejected(reason: "Must play a card larger than difference")
 					}
 				}
@@ -199,6 +199,17 @@ class GameManager {
 			return .Accepted
 		}
 
+		let checkEqual = { [weak self] () -> Bool in
+			if self?.hostCardStack.point == self?.oppoCardStack.point {
+				print("Tie, clear desk and redraw")
+				self?.hostCardStack.clear()
+				self?.oppoCardStack.clear()
+				self?.state = .PointDual
+				return true
+			}
+			return false
+		}
+
 		let retry = { [weak self] in
 			switch action.playerType {
 			case .Host:
@@ -211,13 +222,13 @@ class GameManager {
 		if action.playerType == .Host && self.state == .HostTurn {
 			print("Host played card")
 			let fb = processCard(action.playedHand!, self.hostCardStack, self.oppoCardStack)
-			if fb == ActionFeedback.Accepted { self.state = .OpponentTurn }
+			if fb == ActionFeedback.Accepted && !checkEqual() { self.state = .OpponentTurn }
 			else { retry() }
 			return fb
 		} else if action.playerType == .Opponent && self.state == .OpponentTurn {
 			print("Opponent played card")
 			let fb = processCard(action.playedHand!, self.oppoCardStack, self.hostCardStack)
-			if fb == ActionFeedback.Accepted { self.state = .HostTurn }
+			if fb == ActionFeedback.Accepted && !checkEqual() { self.state = .HostTurn }
 			else { retry() }
 			return fb
 		} else {
