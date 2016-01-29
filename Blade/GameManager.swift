@@ -33,7 +33,7 @@ let BladeNewStateNotfication = "BladeNewStateNotfication"
 class DeskStack {
 	var cardStack: [Card] = []
 	var point: Int = 0
-    var graveyard: Card? = nil
+    var graveyard: Card?
 	
 	func addWeaponCard(card: Card) {
 		self.cardStack.append(card)
@@ -45,7 +45,9 @@ class DeskStack {
 	func removeTopCard() {
 		if let card = self.cardStack.popLast(), let wCard = card as? WeaponCard {
 			self.point -= wCard.weaponNum
-            self.graveyard? = card
+            let copy = wCard as Card
+            self.graveyard = copy
+            //print("\(self.graveyard) last printed") DEBUG USAGE
 		}
 	}
 
@@ -167,10 +169,12 @@ class GameManager {
     
     private func reforge() {
         print("Reforge Happened")
+        self.terminate()
+        self.dualcount = 0
+        self.host?.handCards = []
+        self.opponent?.handCards = []
         //TODO:simple implementation of restarting, should be more efficient
-        host?.handCards = []
-        opponent?.handCards = []
-        self.state = .Start
+        self.start()
     }
 	
 	private func pointDual() {
@@ -180,6 +184,7 @@ class GameManager {
             
             var hostCard:WeaponCard
             var opponentCard:WeaponCard
+            var ifReforge = false
             
             repeat{
                 hostCard = try self.getFirstWeaponCard()
@@ -194,18 +199,22 @@ class GameManager {
                 
                 if(self.dualcount == 4){
                     print("re-forge occurs")
-                    //TODO:IMPLEMENT AFTER REFORGE IMPLEMENTATION
+                    ifReforge = true
+                    break
                 }
             
             }while(hostCard.weaponNum == opponentCard.weaponNum)
             
             print("PointDual Finished")
             
-			self.hostCardStack.addWeaponCard(hostCard)
-			self.oppoCardStack.addWeaponCard(opponentCard)
+            if ifReforge {
+                self.state = .Reforge
+            } else {
+                self.hostCardStack.addWeaponCard(hostCard)
+                self.oppoCardStack.addWeaponCard(opponentCard)
             
-			self.state = hostCard.weaponNum < opponentCard.weaponNum ? .HostTurn : .OpponentTurn
-            
+                self.state = hostCard.weaponNum < opponentCard.weaponNum ? .HostTurn : .OpponentTurn
+            }
 		} catch _ {
 			self.state = .Error
             
@@ -229,20 +238,30 @@ class GameManager {
 			print("Played card: \(card)")
 			switch card.cardType {
 			case .Weapon:
-				switch action.playerType {
+                if card.sortIndex == 0 {
+                    print(actionStack.graveyard) // debug
+                    //print(oppoStack.graveyard) // debug
+                    if let revived = actionStack.graveyard {
+                        actionStack.addWeaponCard(revived)
+                        actionStack.graveyard = nil
+                        print(actionStack.graveyard) // debug
+                    } else {
+                        return .Rejected(reason: "No Card in GraveYard")
+                    }
+                } else {
+                    switch action.playerType {
                     
-                //TODO:Implement Card 1, revive the last died weapon. Has to satisfy basic condition too
-                    
-				case .Host:
-					if self.oppoCardStack.point - self.hostCardStack.point > (action.playedHand as! WeaponCard).weaponNum {
-						return .Rejected(reason: "Must play a card larger than difference")
-					}
-				case .Opponent:
-					if self.hostCardStack.point - self.oppoCardStack.point > (action.playedHand as! WeaponCard).weaponNum {
-						return .Rejected(reason: "Must play a card larger than difference")
-					}
-				}
-				actionStack.addWeaponCard(card)
+                    case .Host:
+                        if self.oppoCardStack.point - self.hostCardStack.point > (action.playedHand as! WeaponCard).weaponNum {
+                            return .Rejected(reason: "Must play a card larger than difference")
+                        }
+                    case .Opponent:
+                        if self.hostCardStack.point - self.oppoCardStack.point > (action.playedHand as! WeaponCard).weaponNum {
+                            return .Rejected(reason: "Must play a card larger than difference")
+                        }
+                    }
+                    actionStack.addWeaponCard(card)
+                }
             case .Magic:
                 if let card = card as? MagicCard {
                     switch card.magicType {
@@ -269,7 +288,7 @@ class GameManager {
                                 return .Rejected(reason: "Must play a card larger than difference")
                             }
                         case .Opponent:
-                            if self.hostCardStack.point * 2 < self.oppoCardStack.point || self.oppoCardStack.point == 0{
+                            if self.hostCardStack.point > self.oppoCardStack.point * 2 || self.oppoCardStack.point == 0{
                                 return .Rejected(reason: "Must play a card larger than difference")
                             }
                         }
