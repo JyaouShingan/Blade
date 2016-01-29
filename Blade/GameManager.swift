@@ -18,6 +18,7 @@ enum GameState {
 	case OpponentTurn
 	case End
 	case OutOfDeck
+    case Reforge // Under TEST
 	case Error
 }
 
@@ -32,6 +33,7 @@ let BladeNewStateNotfication = "BladeNewStateNotfication"
 class DeskStack {
 	var cardStack: [Card] = []
 	var point: Int = 0
+    var graveyard: Card? = nil
 	
 	func addWeaponCard(card: Card) {
 		self.cardStack.append(card)
@@ -43,6 +45,7 @@ class DeskStack {
 	func removeTopCard() {
 		if let card = self.cardStack.popLast(), let wCard = card as? WeaponCard {
 			self.point -= wCard.weaponNum
+            self.graveyard? = card
 		}
 	}
 
@@ -115,6 +118,8 @@ class GameManager {
 			self.startHostStep()
 		case .OpponentTurn:
 			self.startOppoStep()
+        case .Reforge:
+            self.reforge()
 		case .End:
 			print("END")
 		default:
@@ -149,8 +154,24 @@ class GameManager {
 				}
 			}
 		}
-		self.state = .PointDual
+        
+        if(deck_basic_condition()) {
+            print("HAND CONDITION PASSED") // DEBUG
+            self.state = .PointDual
+        }
+        else {
+            print("REFORGE HAPPANED BECAUSE OF HAND CONDITION ISNT SATISFIED") // DEBUG
+            self.state = .Reforge
+        }
 	}
+    
+    private func reforge() {
+        print("Reforge Happened")
+        //TODO:simple implementation of restarting, should be more efficient
+        host?.handCards = []
+        opponent?.handCards = []
+        self.state = .Start
+    }
 	
 	private func pointDual() {
 		do {
@@ -209,6 +230,9 @@ class GameManager {
 			switch card.cardType {
 			case .Weapon:
 				switch action.playerType {
+                    
+                //TODO:Implement Card 1, revive the last died weapon. Has to satisfy basic condition too
+                    
 				case .Host:
 					if self.oppoCardStack.point - self.hostCardStack.point > (action.playedHand as! WeaponCard).weaponNum {
 						return .Rejected(reason: "Must play a card larger than difference")
@@ -241,11 +265,11 @@ class GameManager {
                         copy.weaponNum = point
                         switch action.playerType {
                         case .Host:
-                            if self.oppoCardStack.point > self.hostCardStack.point * 2 {
+                            if self.oppoCardStack.point > self.hostCardStack.point * 2 || self.hostCardStack.point == 0{
                                 return .Rejected(reason: "Must play a card larger than difference")
                             }
                         case .Opponent:
-                            if self.hostCardStack.point * 2 < self.oppoCardStack.point {
+                            if self.hostCardStack.point * 2 < self.oppoCardStack.point || self.oppoCardStack.point == 0{
                                 return .Rejected(reason: "Must play a card larger than difference")
                             }
                         }
@@ -256,6 +280,7 @@ class GameManager {
 			default:
 				()
 			}
+            //TODO:CHECK IF ONLY MAGIC CARD LEFT
 			return .Accepted
 		}
 
@@ -316,7 +341,7 @@ class GameManager {
 			self.opponent?.actionFeedback(action.id, type: feedback)
 		}
 	}
-	
+    
 	// MARK:- Helper
 	
 	private func getFirstWeaponCard() throws -> WeaponCard {
@@ -331,4 +356,10 @@ class GameManager {
 		}
 		throw NSError(domain: "com.blade", code: 11, userInfo: [NSLocalizedDescriptionKey:"Weapon Card Not Found in current Deck"])
 	}
+    
+    private func deck_basic_condition() -> Bool {
+        let oppohand = opponent!.evaluateHand()
+        let hosthand = host!.evaluateHand()
+        return oppohand.valid && hosthand.valid
+    }
 }

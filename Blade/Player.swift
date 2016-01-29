@@ -70,4 +70,19 @@ class Player {
 			}
 		}
 	}
+    
+    func evaluateHand() -> (min:Int, magic:Int, sum:Int, valid:Bool){
+        var min = 10, magic = 0, sum = 0
+        for card in self.handCards {
+            if (card.cardType == .Magic){
+                magic++
+            }
+            else {
+                min = card.sortIndex + 1 < min ? card.sortIndex + 1 : min
+                sum += card.sortIndex+1
+            }
+        }
+        let valid = min < 5 && magic < 6 && sum >= 20
+        return (min, magic, sum, valid)
+    }
 }
