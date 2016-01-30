@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		A21D851B1C0CD6FD000247E0 /* TestPlayers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21D851A1C0CD6FD000247E0 /* TestPlayers.swift */; };
+		A23A48141C5C712700B482A2 /* Utility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A23A48131C5C712700B482A2 /* Utility.swift */; };
 		A2B70BCE1C04E9920073E105 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2B70BCD1C04E9920073E105 /* AppDelegate.swift */; };
 		A2B70BD41C04E9920073E105 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2B70BD31C04E9920073E105 /* ViewController.swift */; };
 		A2B70BD71C04E9920073E105 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A2B70BD51C04E9920073E105 /* Main.storyboard */; };
@@ -42,6 +43,7 @@
 
 /* Begin PBXFileReference section */
 		A21D851A1C0CD6FD000247E0 /* TestPlayers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestPlayers.swift; sourceTree = "<group>"; };
+		A23A48131C5C712700B482A2 /* Utility.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Utility.swift; sourceTree = "<group>"; };
 		A2B70BCA1C04E9910073E105 /* Blade.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Blade.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A2B70BCD1C04E9920073E105 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A2B70BD31C04E9920073E105 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -88,6 +90,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A23A48121C5C711900B482A2 /* Utility */ = {
+			isa = PBXGroup;
+			children = (
+				A23A48131C5C712700B482A2 /* Utility.swift */,
+			);
+			name = Utility;
+			sourceTree = "<group>";
+		};
 		A2B70BC11C04E9910073E105 = {
 			isa = PBXGroup;
 			children = (
@@ -111,6 +121,7 @@
 		A2B70BCC1C04E9920073E105 /* Blade */ = {
 			isa = PBXGroup;
 			children = (
+				A23A48121C5C711900B482A2 /* Utility */,
 				A2B70BFF1C04EABF0073E105 /* Logic */,
 				A2B70BCD1C04E9920073E105 /* AppDelegate.swift */,
 				A2B70BD31C04E9920073E105 /* ViewController.swift */,
@@ -285,6 +296,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A23A48141C5C712700B482A2 /* Utility.swift in Sources */,
 				A2B70C091C050D430073E105 /* GameStatus.swift in Sources */,
 				A21D851B1C0CD6FD000247E0 /* TestPlayers.swift in Sources */,
 				A2B70C051C0508230073E105 /* GameManager.swift in Sources */,
