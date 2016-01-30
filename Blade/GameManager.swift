@@ -238,7 +238,7 @@ class GameManager {
 			print("Played card: \(card)")
 			switch card.cardType {
 			case .Weapon:
-                if card.sortIndex == 0 {
+                if card.sortIndex == 0 && actionStack.graveyard != nil {
                     print(actionStack.graveyard) // debug
                     //print(oppoStack.graveyard) // debug
                     if let revived = actionStack.graveyard {
