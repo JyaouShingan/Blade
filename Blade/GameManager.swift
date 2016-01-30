@@ -238,7 +238,10 @@ class GameManager {
 			print("Played card: \(card)")
 			switch card.cardType {
 			case .Weapon:
-                if card.sortIndex == 0 && actionStack.graveyard != nil {
+				if self.ifHandOnlyMagic(action) {
+					return .Rejected(reason: "Hand cannot contain only magic card")
+				}
+                else if card.sortIndex == 0 && actionStack.graveyard != nil {
                     print(actionStack.graveyard) // debug
                     //print(oppoStack.graveyard) // debug
                     if let revived = actionStack.graveyard {
@@ -374,6 +377,28 @@ class GameManager {
 			}
 		}
 		throw NSError(domain: "com.blade", code: 11, userInfo: [NSLocalizedDescriptionKey:"Weapon Card Not Found in current Deck"])
+	}
+
+	private func ifHandOnlyMagic(action:Action) -> Bool {
+		var count = 0
+		var total = 0
+		switch action.playerType {
+		case .Host:
+			for card in self.host!.handCards {
+				if card.sortIndex < 7 {
+					count++
+				}
+				total++
+			}
+		case .Opponent:
+			for card in self.opponent!.handCards {
+				if card.sortIndex < 7 {
+					count++
+				}
+				total++
+			}
+		}
+		return count < 2 && total != count
 	}
     
     private func deck_basic_condition() -> Bool {
