@@ -64,8 +64,10 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
 	func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
 		switch tableView {
 		case self.hostHandTableView:
+			print("TableView Host Count: \(self.playerA?.handCards.count)")
 			return self.playerA?.handCards.count ?? 0
 		case self.oppoHandTableView:
+			print("TableView Oppo Count: \(self.playerB?.handCards.count)")
 			return self.playerB?.handCards.count ?? 0
 		default:
 			return 0
@@ -76,11 +78,11 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
 		switch tableView {
 		case self.hostHandTableView:
 			let cell = tableView.dequeueReusableCellWithIdentifier("HostHandCell", forIndexPath: indexPath)
-			cell.textLabel?.text = "\(self.playerA!.handCards[indexPath.row])"
+			cell.textLabel?.text = "\((self.playerA!.handCards[safe: indexPath.row] ?? NotCard()))"
 			return cell
 		case self.oppoHandTableView:
 			let cell = tableView.dequeueReusableCellWithIdentifier("OppoHandCell", forIndexPath: indexPath)
-			cell.textLabel?.text = "\(self.playerB!.handCards[indexPath.row])"
+			cell.textLabel?.text = "\((self.playerB!.handCards[safe: indexPath.row] ?? NotCard()))"
 			return cell
 		default:
 			return UITableViewCell()

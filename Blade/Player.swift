@@ -82,7 +82,7 @@ class Player {
                 sum += card.sortIndex+1
             }
         }
-        let valid = min < 5 && magic < 6 && sum >= 20
+        let valid = min < 5 && magic < 6 && sum >= 13
         return (min, magic, sum, valid)
     }
 }
