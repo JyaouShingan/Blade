@@ -53,6 +53,7 @@ class DeskStack {
 
 	func clear() {
 		self.cardStack.removeAll()
+		self.graveyard = nil
 		self.point = 0
 	}
 }
@@ -141,13 +142,29 @@ class GameManager {
                 }
             }
         }
-        
-        print(self.deck.cardDeck)
+		
+		print("Dealing Part 1 Done")
+		print(host?.handCards)
+		print(opponent?.handCards)
+		
+		for k in 0..<4 {
+			if let card = self.deck.next() {
+				if k % 2 == 0 {
+					self.host?.getHandcard(card)
+				} else {
+					self.opponent?.getHandcard(card)
+				}
+			}
+		}
+	
+		print("Dealing Part 2 Done")
+		print(host?.handCards)
+		print(opponent?.handCards)
+		
         self.deck.cardDeck += self.deck.magicDeck
         self.deck.shuffle()
-        print(self.deck.cardDeck)
         
-		for i in 0..<16 {
+		for i in 0..<12 {
 			if let card = self.deck.next() {
 				if i % 2 == 0 {
 					self.host?.getHandcard(card)
@@ -156,7 +173,11 @@ class GameManager {
 				}
 			}
 		}
-        
+		
+		print("Dealing Part 3 Done")
+		print(host?.handCards)
+		print(opponent?.handCards)
+		
         if(deck_basic_condition()) {
             print("HAND CONDITION PASSED") // DEBUG
             self.state = .PointDual
@@ -182,17 +203,19 @@ class GameManager {
             //let hostCard = try self.getFirstWeaponCard()
 			//let opponentCard = try self.getFirstWeaponCard()
             
-            var hostCard:WeaponCard
-            var opponentCard:WeaponCard
+            var firstCard:WeaponCard
+            var secondCard:WeaponCard
             var ifReforge = false
-            
+			let hostHandMore = host?.handCards.count > opponent?.handCards.count
+			let oppoHandMore = host?.handCards.count < opponent?.handCards.count
+			
             repeat{
-                hostCard = try self.getFirstWeaponCard()
-                opponentCard = try self.getFirstWeaponCard()
+                firstCard = try self.getFirstWeaponCard()
+                secondCard = try self.getFirstWeaponCard()
                 
                 print("--PointDual--")
-                print("Host: \(hostCard)")
-                print("Opponent: \(opponentCard)")
+                print("Host: \(firstCard)")
+                print("Opponent: \(secondCard)")
                 self.dualcount!++
                 
                 print("Dual Total Times: \(self.dualcount!)")
@@ -203,36 +226,41 @@ class GameManager {
                     break
                 }
             
-            }while(hostCard.weaponNum == opponentCard.weaponNum)
-            
+            }while(firstCard.weaponNum == secondCard.weaponNum)
+			
             print("PointDual Finished")
-            
+			
+			if (hostHandMore && firstCard.weaponNum > secondCard.weaponNum) ||
+			   (oppoHandMore && secondCard.weaponNum > firstCard.weaponNum) {
+				swap(&firstCard, &secondCard)
+				print("Background blackhand swapped")
+			}
+
             if ifReforge {
                 self.state = .Reforge
             } else {
-                self.hostCardStack.addWeaponCard(hostCard)
-                self.oppoCardStack.addWeaponCard(opponentCard)
-            
-                self.state = hostCard.weaponNum < opponentCard.weaponNum ? .HostTurn : .OpponentTurn
+                self.hostCardStack.addWeaponCard(firstCard)
+                self.oppoCardStack.addWeaponCard(secondCard)
+				
+                self.state = firstCard.weaponNum < secondCard.weaponNum ? .HostTurn : .OpponentTurn
             }
 		} catch _ {
 			self.state = .Error
-            
 		}
 	}
-	
+
 	private func startHostStep() {
 		self.host?.requestAction() { (action: Action) -> Void in
 			self.registerAction(action)
 		}
 	}
-	
+
 	private func startOppoStep() {
 		self.opponent?.requestAction() { (action: Action) -> Void in
 			self.registerAction(action)
 		}
 	}
-	
+
 	private func processPlayHand(action: Action) -> ActionFeedback {
 		let processCard = { (card: Card, actionStack: DeskStack, oppoStack: DeskStack) -> ActionFeedback in
 			print("Played card: \(card)")
@@ -298,7 +326,7 @@ class GameManager {
                         actionStack.addWeaponCard(copy)
                     }
                 }
-                
+
 			default:
 				()
 			}
@@ -325,7 +353,7 @@ class GameManager {
 				self?.startOppoStep()
 			}
 		}
-		
+
 		if action.playerType == .Host && self.state == .HostTurn {
 			print("Host played card")
 			let fb = processCard(action.playedHand!, self.hostCardStack, self.oppoCardStack)
@@ -342,7 +370,7 @@ class GameManager {
 			return ActionFeedback.Rejected(reason: "Cannot play hand during others turn")
 		}
 	}
-	
+
 	func registerAction(action: Action) {
 		var feedback: ActionFeedback
 		switch action.actionType {
@@ -355,7 +383,7 @@ class GameManager {
 			feedback = .Accepted
 			()
 		}
-		
+
 		switch action.playerType {
 		case .Host:
 			self.host?.actionFeedback(action.id, type: feedback)
@@ -363,9 +391,8 @@ class GameManager {
 			self.opponent?.actionFeedback(action.id, type: feedback)
 		}
 	}
-    
 	// MARK:- Helper
-	
+
 	private func getFirstWeaponCard() throws -> WeaponCard {
 		var index = self.deck.cardDeck.count - 1
 		while index >= 0 {
@@ -400,7 +427,7 @@ class GameManager {
 		}
 		return count < 2 && total != count
 	}
-    
+
     private func deck_basic_condition() -> Bool {
         let oppohand = opponent!.evaluateHand()
         let hosthand = host!.evaluateHand()
