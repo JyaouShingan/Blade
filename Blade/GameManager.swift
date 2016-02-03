@@ -60,6 +60,8 @@ class DeskStack {
 
 class GameManager {
 	
+	private var rule: Ruler?
+	
 	private var mode: GameMode
 	private var deck: Deck!
 	private var state: GameState {
@@ -72,7 +74,6 @@ class GameManager {
 	
 	var host: Player?
 	var opponent: Player?
-    var dualcount: Int?
 	
 	private var hostCardStack = DeskStack()
 	private var oppoCardStack = DeskStack()
@@ -80,11 +81,11 @@ class GameManager {
 	init(gameMode: GameMode, host: Player, opponent: Player) {
 		self.mode = gameMode
 		self.state = .Hanging
-		
 		self.host = host
 		self.opponent = opponent
-        self.dualcount = 0
-
+		
+		self.rule = Ruler(manager: self)
+		
 		self.host?.actionCallback = {[weak self] (action: Action) -> Void in
 			self?.registerAction(action)
 		}
@@ -100,6 +101,22 @@ class GameManager {
 	func terminate() {
 		self.hostCardStack.clear()
 		self.oppoCardStack.clear()
+	}
+	
+	func setState(state:GameState) {
+		self.state = state
+	}
+	
+	func getState() -> GameState {
+		return self.state
+	}
+	
+	func getStack(id:String) -> DeskStack{
+		return id == "host" ? self.hostCardStack : self.oppoCardStack
+	}
+	
+	func process(action:Action) -> ActionFeedback{
+		return processPlayHand(action)
 	}
 	
 	// MARK:- Game Process
@@ -132,258 +149,38 @@ class GameManager {
 	
 	private func dealing() {
 		self.deck = Deck()
-        
-        for j in 0..<2 {
-            if let card = self.deck.nextMagic() {
-                if j % 2 == 0 {
-                    self.host?.getHandcard(card)
-                } else {
-                    self.opponent?.getHandcard(card)
-                }
-            }
-        }
-		
-		print("Dealing Part 1 Done")
-		print(host?.handCards)
-		print(opponent?.handCards)
-		
-		for k in 0..<4 {
-			if let card = self.deck.next() {
-				if k % 2 == 0 {
-					self.host?.getHandcard(card)
-				} else {
-					self.opponent?.getHandcard(card)
-				}
-			}
-		}
-	
-		print("Dealing Part 2 Done")
-		print(host?.handCards)
-		print(opponent?.handCards)
-		
-        self.deck.cardDeck += self.deck.magicDeck
-        self.deck.shuffle()
-        
-		for i in 0..<12 {
-			if let card = self.deck.next() {
-				if i % 2 == 0 {
-					self.host?.getHandcard(card)
-				} else {
-					self.opponent?.getHandcard(card)
-				}
-			}
-		}
-		
-		print("Dealing Part 3 Done")
-		print(host?.handCards)
-		print(opponent?.handCards)
-		
-        if(deck_basic_condition()) {
-            print("HAND CONDITION PASSED") // DEBUG
-            self.state = .PointDual
-        }
-        else {
-            print("REFORGE HAPPANED BECAUSE OF HAND CONDITION ISNT SATISFIED") // DEBUG
-            self.state = .Reforge
-        }
+		self.rule!.dealing(self.deck)
 	}
-    
-    private func reforge() {
-        print("Reforge Happened")
-        self.terminate()
-        self.dualcount = 0
-        self.host?.handCards = []
-        self.opponent?.handCards = []
-        //TODO:simple implementation of restarting, should be more efficient
-        self.start()
-    }
+	
+	private func reforge() {
+		self.rule!.reforge()
+	}
 	
 	private func pointDual() {
-		do {
-            //let hostCard = try self.getFirstWeaponCard()
-			//let opponentCard = try self.getFirstWeaponCard()
-            
-            var firstCard:WeaponCard
-            var secondCard:WeaponCard
-            var ifReforge = false
-			let hostHandMore = host?.handCards.count > opponent?.handCards.count
-			let oppoHandMore = host?.handCards.count < opponent?.handCards.count
-			
-            repeat{
-                firstCard = try self.getFirstWeaponCard()
-                secondCard = try self.getFirstWeaponCard()
-                
-                print("--PointDual--")
-                print("Host: \(firstCard)")
-                print("Opponent: \(secondCard)")
-                self.dualcount!++
-                
-                print("Dual Total Times: \(self.dualcount!)")
-                
-                if(self.dualcount == 4){
-                    print("re-forge occurs")
-                    ifReforge = true
-                    break
-                }
-            
-            }while(firstCard.weaponNum == secondCard.weaponNum)
-			
-            print("PointDual Finished")
-			
-			if (hostHandMore && firstCard.weaponNum > secondCard.weaponNum) ||
-			   (oppoHandMore && secondCard.weaponNum > firstCard.weaponNum) {
-				swap(&firstCard, &secondCard)
-				print("Background blackhand swapped")
-			}
-
-            if ifReforge {
-                self.state = .Reforge
-            } else {
-                self.hostCardStack.addWeaponCard(firstCard)
-                self.oppoCardStack.addWeaponCard(secondCard)
-				
-                self.state = firstCard.weaponNum < secondCard.weaponNum ? .HostTurn : .OpponentTurn
-            }
-		} catch _ {
-			self.state = .Error
-		}
+		self.rule!.pointDual(self.deck)
 	}
 
 	private func startHostStep() {
-		self.host?.requestAction() { (action: Action) -> Void in
-			self.registerAction(action)
-		}
+		self.rule!.startHostStep()
 	}
-
+	
 	private func startOppoStep() {
-		self.opponent?.requestAction() { (action: Action) -> Void in
-			self.registerAction(action)
-		}
+		self.rule!.startOppoStep()
 	}
-
-	private func processPlayHand(action: Action) -> ActionFeedback {
-		let processCard = { (card: Card, actionStack: DeskStack, oppoStack: DeskStack) -> ActionFeedback in
-			print("Played card: \(card)")
-			switch card.cardType {
-			case .Weapon:
-				if self.ifHandOnlyMagic(action) {
-					return .Rejected(reason: "Hand cannot contain only magic card")
-				}
-                else if card.sortIndex == 0 && actionStack.graveyard != nil {
-                    print(actionStack.graveyard) // debug
-                    //print(oppoStack.graveyard) // debug
-                    if let revived = actionStack.graveyard {
-                        actionStack.addWeaponCard(revived)
-                        actionStack.graveyard = nil
-                        print(actionStack.graveyard) // debug
-                    } else {
-                        return .Rejected(reason: "No Card in GraveYard")
-                    }
-                } else {
-                    switch action.playerType {
-                    
-                    case .Host:
-                        if self.oppoCardStack.point - self.hostCardStack.point > (action.playedHand as! WeaponCard).weaponNum {
-                            return .Rejected(reason: "Must play a card larger than difference")
-                        }
-                    case .Opponent:
-                        if self.hostCardStack.point - self.oppoCardStack.point > (action.playedHand as! WeaponCard).weaponNum {
-                            return .Rejected(reason: "Must play a card larger than difference")
-                        }
-                    }
-                    actionStack.addWeaponCard(card)
-                }
-            case .Magic:
-                if let card = card as? MagicCard {
-                    switch card.magicType {
-                    case .Bolt:
-                        if oppoStack.cardStack.isEmpty {
-                            return .Rejected(reason: "Other's desk is empty")
-                        } else {
-                            oppoStack.removeTopCard()
-                        }
-                    case .Mirror:
-                        let tempStack = actionStack.cardStack
-                        let tempPoint = actionStack.point
-                        actionStack.cardStack = oppoStack.cardStack
-                        actionStack.point = oppoStack.point
-                        oppoStack.cardStack = tempStack
-                        oppoStack.point = tempPoint
-                    case .Bless:
-                        let point = actionStack.point
-                        let copy = GuardianCopy()
-                        copy.weaponNum = point
-                        switch action.playerType {
-                        case .Host:
-                            if self.oppoCardStack.point > self.hostCardStack.point * 2 || self.hostCardStack.point == 0{
-                                return .Rejected(reason: "Must play a card larger than difference")
-                            }
-                        case .Opponent:
-                            if self.hostCardStack.point > self.oppoCardStack.point * 2 || self.oppoCardStack.point == 0{
-                                return .Rejected(reason: "Must play a card larger than difference")
-                            }
-                        }
-                        actionStack.addWeaponCard(copy)
-                    }
-                }
-
-			default:
-				()
-			}
-            //TODO:CHECK IF ONLY MAGIC CARD LEFT
-			return .Accepted
-		}
-
-		let checkEqual = { [weak self] () -> Bool in
-			if self?.hostCardStack.point == self?.oppoCardStack.point {
-				print("Tie, clear desk and redraw")
-				self?.hostCardStack.clear()
-				self?.oppoCardStack.clear()
-				self?.state = .PointDual
-				return true
-			}
-			return false
-		}
-
-		let retry = { [weak self] in
-			switch action.playerType {
-			case .Host:
-				self?.startHostStep()
-			case .Opponent:
-				self?.startOppoStep()
-			}
-		}
-
-		if action.playerType == .Host && self.state == .HostTurn {
-			print("Host played card")
-			let fb = processCard(action.playedHand!, self.hostCardStack, self.oppoCardStack)
-			if fb == ActionFeedback.Accepted && !checkEqual() { self.state = .OpponentTurn }
-			else { retry() }
-			return fb
-		} else if action.playerType == .Opponent && self.state == .OpponentTurn {
-			print("Opponent played card")
-			let fb = processCard(action.playedHand!, self.oppoCardStack, self.hostCardStack)
-			if fb == ActionFeedback.Accepted && !checkEqual() { self.state = .HostTurn }
-			else { retry() }
-			return fb
-		} else {
-			return ActionFeedback.Rejected(reason: "Cannot play hand during others turn")
-		}
-	}
-
+	
 	func registerAction(action: Action) {
 		var feedback: ActionFeedback
 		switch action.actionType {
 		case .PlayHand:
-			feedback = self.processPlayHand(action)
+			feedback = self.process(action)
 		case .OutOfCard:
-			self.state = .End
+			self.setState(.End)
 			feedback = .Accepted
 		case .Quit:
 			feedback = .Accepted
 			()
 		}
-
+		
 		switch action.playerType {
 		case .Host:
 			self.host?.actionFeedback(action.id, type: feedback)
@@ -391,46 +188,10 @@ class GameManager {
 			self.opponent?.actionFeedback(action.id, type: feedback)
 		}
 	}
+	
+	private func processPlayHand(action: Action) -> ActionFeedback {
+		return self.rule!.processHand(action)
+	}
 	// MARK:- Helper
-
-	private func getFirstWeaponCard() throws -> WeaponCard {
-		var index = self.deck.cardDeck.count - 1
-		while index >= 0 {
-			if let weapon = self.deck.cardDeck[index] as? WeaponCard {
-				self.deck.cardDeck.removeAtIndex(index)
-				return weapon
-			} else {
-				index--
-			}
-		}
-		throw NSError(domain: "com.blade", code: 11, userInfo: [NSLocalizedDescriptionKey:"Weapon Card Not Found in current Deck"])
-	}
-
-	private func ifHandOnlyMagic(action:Action) -> Bool {
-		var count = 0
-		var total = 0
-		switch action.playerType {
-		case .Host:
-			for card in self.host!.handCards {
-				if card.sortIndex < 7 {
-					count++
-				}
-				total++
-			}
-		case .Opponent:
-			for card in self.opponent!.handCards {
-				if card.sortIndex < 7 {
-					count++
-				}
-				total++
-			}
-		}
-		return count < 2 && total != count
-	}
-
-    private func deck_basic_condition() -> Bool {
-        let oppohand = opponent!.evaluateHand()
-        let hosthand = host!.evaluateHand()
-        return oppohand.valid && hosthand.valid
-    }
+	
 }
