@@ -148,6 +148,21 @@ class Ruler {
 	}
 	
 	func processHand(action:Action) -> ActionFeedback {
+		let notRevivable = { [weak self] (card:Card) -> Bool in
+			switch action.playerType {
+				
+			case .Host:
+				if self!.opponentStack.point - self!.hostStack.point > (card as! WeaponCard).weaponNum {
+					return true
+				}
+			case .Opponent:
+				if self!.hostStack.point - self!.opponentStack.point > (card as! WeaponCard).weaponNum {
+					return true
+				}
+			}
+			return false
+		}
+		
 		let processCard = { (card: Card, actionStack: DeskStack, oppoStack: DeskStack) -> ActionFeedback in
 			print("Played card: \(card)")
 			switch card.cardType {
@@ -157,8 +172,8 @@ class Ruler {
 				}
 				else if card.sortIndex == 0 && actionStack.graveyard != nil {
 					print(actionStack.graveyard) // debug
-					//print(oppoStack.graveyard) // debug
 					if let revived = actionStack.graveyard {
+						if notRevivable(revived) { return .Rejected(reason: "Not Enough Points") }
 						actionStack.addWeaponCard(revived)
 						actionStack.graveyard = nil
 						print(actionStack.graveyard) // debug
